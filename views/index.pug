@@ -1,0 +1,16 @@
+extends layout
+block content
+  div.title-container
+    h1 IS-218 Oppgave 2
+    p Gruppe 10 
+  div.map-container
+    div#map
+  script.
+    window.shelterData = !{shelterData || 'null'};
+    window.bunkerData = !{bunkerData || 'null'};
+  script(
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  )
+  script(src='/leaflet/core.js')
