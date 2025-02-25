@@ -6,8 +6,8 @@
   "name": "localhost (Chrome)",
   "type": "chrome",
   "request": "launch",
-  "url": "http://localhost:3000",
-  "webRoot": "C:\\Users\\ivark\\source\\repos\\IS218Prosjekt\\IS218Prosjekt\\public"
+  "url": "http://localhost:3002",
+  "webRoot": "C:\\Users\\Krist\\UIAlocal\\IS-218\\oppgave2\\public"
 }</LaunchJsonTarget>
   </PropertyGroup>
 </Project>
