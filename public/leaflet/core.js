@@ -416,29 +416,33 @@ document.addEventListener('DOMContentLoaded', function () {
             const div = L.DomUtil.create('div', 'layer-control');
             div.innerHTML = `
           <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.4);">
-            <h4 style="margin: 0 0 5px 0;">Velg Shelters eller Tilfuktsrom for å se hvor de er</h4>
+            <h4 style="margin: 0 0 5px 0;">Velg hvilke elementer du ønsker å se:</h4>
             <div>
               <label>
                 <input type="checkbox" id="shelter-checkbox" checked>
-                Shelters (Blå)
+                Alternativt tilfluktsrom
+                <img src="${window.location.origin}/assets/tent-7-svgrepo-com.svg" alt="Shelter" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;">
               </label>
             </div>
             <div>
               <label>
                 <input type="checkbox" id="bunker-checkbox" checked>
-                Tilfluktsrom (Rød)
+                Offentlig Tilfluktsrom
+                <img src="${window.location.origin}/assets/bunker-svgrepo-com-3.svg" alt="Tilfluktsrom" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;">
               </label>
             </div>
             <div>
               <label>
                 <input type="checkbox" id="position-checkbox" checked>
-                Min posisjon (Grønn)
+                Min posisjon
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" alt="Min posisjon" style="width: 12px; height: 20px; vertical-align: middle; margin-right: 4px;">
               </label>
             </div>
             <div>
               <label>
                 <input type="checkbox" id="custom-checkbox" checked>
-                Valgt posisjon (Lilla)
+                Valgt posisjon
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png" alt="Valgt posisjon" style="width: 12px; height: 20px; vertical-align: middle; margin-right: 4px;">
               </label>
             </div>
             <div>
