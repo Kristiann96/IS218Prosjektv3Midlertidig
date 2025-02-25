@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create layer groups to hold our markers
         const shelterLayer = L.layerGroup().addTo(map);
         const bunkerLayer = L.layerGroup().addTo(map);
-        const positionLayer = L.layerGroup().addTo(map); // New layer for position marker
+        const positionLayer = L.layerGroup().addTo(map); // Layer for position marker
+        const customLayer = L.layerGroup().addTo(map); // Layer for custom markers
 
         // Add shelter points (blue markers - default)
         if (window.shelterData && window.shelterData.length > 0) {
@@ -72,8 +73,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Add current position marker (green)
         let positionMarker = null;
+        let customMarker = null;
+
         const greenIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            shadowSize: [41, 41],
+            shadowAnchor: [12, 41]
+        });
+
+        const purpleIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
             iconSize: [25, 41],
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
@@ -191,15 +204,100 @@ document.addEventListener('DOMContentLoaded', function () {
         map.on('locationfound', onLocationFound);
         map.on('locationerror', onLocationError);
 
+        // Function to create custom marker and calculate distances
+        function createCustomMarker(latlng) {
+            // Clear previous custom marker if exists
+            if (customMarker) {
+                customLayer.removeLayer(customMarker);
+
+                // Also clear all lines and distance indicators
+                customLayer.eachLayer(layer => {
+                    if (!(layer instanceof L.Marker)) {
+                        customLayer.removeLayer(layer);
+                    }
+                });
+            }
+
+            // Add new custom marker
+            customMarker = L.marker(latlng, {
+                icon: purpleIcon,
+                draggable: true // Make the marker draggable
+            }).addTo(customLayer);
+
+            // Find closest shelter (blue marker)
+            const closestShelter = findClosestMarker(latlng, shelterLayer);
+
+            // Find closest bunker (red marker)
+            const closestBunker = findClosestMarker(latlng, bunkerLayer);
+
+            // Create information popup
+            let popupContent = `<b>Din valgte posisjon</b><br><br>`;
+
+            if (closestShelter.marker) {
+                // Draw line to closest shelter
+                const shelterLine = L.polyline([latlng, closestShelter.marker.getLatLng()], {
+                    color: 'blue',
+                    dashArray: '5, 10',
+                    weight: 2
+                }).addTo(customLayer);
+
+                popupContent += `<b>Nærmeste Shelter:</b> ${Math.round(closestShelter.distance)} meter<br>`;
+            } else {
+                popupContent += `<b>Ingen Shelters funnet</b><br>`;
+            }
+
+            if (closestBunker.marker) {
+                // Draw line to closest bunker
+                const bunkerLine = L.polyline([latlng, closestBunker.marker.getLatLng()], {
+                    color: 'red',
+                    dashArray: '5, 10',
+                    weight: 2
+                }).addTo(customLayer);
+
+                // Get the bunker details from the popup content
+                let bunkerDetails = '';
+                if (closestBunker.marker._popup) {
+                    const popupElement = document.createElement('div');
+                    popupElement.innerHTML = closestBunker.marker._popup._content;
+                    bunkerDetails = popupElement.textContent.trim().replace(/\n\s+/g, ', ');
+                }
+
+                popupContent += `<b>Nærmeste Tilfluktsrom:</b> ${Math.round(closestBunker.distance)} meter`;
+                if (bunkerDetails) {
+                    popupContent += `<br><small>${bunkerDetails}</small>`;
+                }
+            } else {
+                popupContent += `<b>Ingen Tilfluktsrom funnet</b>`;
+            }
+
+            customMarker.bindPopup(popupContent).openPopup();
+
+            // Update distances when marker is dragged
+            customMarker.on('dragend', function (event) {
+                const newPosition = event.target.getLatLng();
+                createCustomMarker(newPosition);
+            });
+        }
+
+        // Enable map click to place custom marker
+        map.on('click', function (e) {
+            createCustomMarker(e.latlng);
+        });
+
         // Create a locate control button
         const locateControl = L.control({ position: 'bottomright' });
 
         locateControl.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'locate-control');
             div.innerHTML = `
-          <button id="locate-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
-            <span style="font-size: 16px;">📍 Finn min posisjon</span>
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="locate-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+              <span style="font-size: 16px;">📍 Finn min posisjon</span>
+            </button>
+            <button id="clear-custom-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+              <span style="font-size: 16px;">🗑️ Fjern lilla markør</span>
+            </button>
+          </div>
         `;
 
             // Prevent map clicks from propagating through the control
@@ -234,6 +332,12 @@ document.addEventListener('DOMContentLoaded', function () {
               <label>
                 <input type="checkbox" id="position-checkbox" checked>
                 Min posisjon (Grønn)
+              </label>
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" id="custom-checkbox" checked>
+                Valgt posisjon (Lilla)
               </label>
             </div>
           </div>
@@ -273,6 +377,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
+            document.getElementById('custom-checkbox').addEventListener('change', function (e) {
+                if (e.target.checked) {
+                    map.addLayer(customLayer);
+                } else {
+                    map.removeLayer(customLayer);
+                }
+            });
+
             // Add event listener for locate button
             document.getElementById('locate-button').addEventListener('click', function () {
                 map.locate({
@@ -280,6 +392,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     maxZoom: 16,
                     enableHighAccuracy: true
                 });
+            });
+
+            // Add event listener for clear custom marker button
+            document.getElementById('clear-custom-button').addEventListener('click', function () {
+                if (customMarker) {
+                    customLayer.clearLayers();
+                    customMarker = null;
+                }
             });
         }, 200);
 
