@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const bunkerLayer = L.layerGroup().addTo(map);
         const positionLayer = L.layerGroup().addTo(map); // Layer for position marker
         const customLayer = L.layerGroup().addTo(map); // Layer for custom markers
+        const routeLayer = L.layerGroup().addTo(map); // Layer for routes - moved up from later in the code
 
         // Add shelter points (blue markers - default)
         if (window.shelterData && window.shelterData.length > 0) {
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add current position marker (green)
         let positionMarker = null;
         let customMarker = null;
+        let infoBox = null;
 
         const greenIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
@@ -121,6 +123,63 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         }
 
+        // OSRM Automatic Route Generation
+        // Function to calculate route between two points using OSRM
+        function calculateRoute(startPoint, endPoint) {
+            // OSRM public demo server - for production, consider using your own OSRM instance
+            const osrmURL = `https://router.project-osrm.org/route/v1/driving/${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}?overview=full&geometries=geojson`;
+
+            return fetch(osrmURL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code !== 'Ok') {
+                        throw new Error(`OSRM returned an error: ${data.code}`);
+                    }
+
+                    return data.routes[0].geometry;
+                });
+        }
+
+        // Function to draw route on the map
+        function drawRoute(geometry, color = '#3388ff', layerGroup) {
+            const route = L.geoJSON(geometry, {
+                style: {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.7
+                }
+            }).addTo(layerGroup);
+
+            return route;
+        }
+
+        // Function to find closest marker and calculate route
+        function findClosestMarkerWithRoute(position, layerGroup, routeLayerGroup, routeColor) {
+            // First find the closest marker
+            const result = findClosestMarker(position, layerGroup);
+
+            // Then calculate route if a marker was found
+            if (result.marker) {
+                calculateRoute(position, result.marker.getLatLng())
+                    .then(geometry => {
+                        // Clear previous routes of this color
+                        routeLayerGroup.eachLayer(layer => {
+                            if (layer.options && layer.options.style && layer.options.style.color === routeColor) {
+                                routeLayerGroup.removeLayer(layer);
+                            }
+                        });
+
+                        // Draw the new route
+                        drawRoute(geometry, routeColor, routeLayerGroup);
+                    })
+                    .catch(error => {
+                        console.error('Error calculating route:', error);
+                    });
+            }
+
+            return result;
+        }
+
         // Function to handle geolocation success
         function onLocationFound(e) {
             const radius = e.accuracy / 2;
@@ -130,41 +189,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 positionLayer.removeLayer(positionMarker);
             }
 
+            // Clear previous accuracy circles
+            positionLayer.eachLayer(layer => {
+                if (layer instanceof L.Circle) {
+                    positionLayer.removeLayer(layer);
+                }
+            });
+
             // Add new position marker
             positionMarker = L.marker(e.latlng, {
                 icon: greenIcon
             }).addTo(positionLayer);
 
             // Find closest shelter (blue marker)
-            const closestShelter = findClosestMarker(e.latlng, shelterLayer);
+            const closestShelter = findClosestMarkerWithRoute(e.latlng, shelterLayer, routeLayer, 'blue');
 
             // Find closest bunker (red marker)
-            const closestBunker = findClosestMarker(e.latlng, bunkerLayer);
+            const closestBunker = findClosestMarkerWithRoute(e.latlng, bunkerLayer, routeLayer, 'red');
 
             // Create information popup
             let popupContent = `<b>Din posisjon</b><br>Nøyaktighet: ${radius.toFixed(1)} meter<br><br>`;
 
             if (closestShelter.marker) {
-                // Draw line to closest shelter
-                const shelterLine = L.polyline([e.latlng, closestShelter.marker.getLatLng()], {
-                    color: 'blue',
-                    dashArray: '5, 10',
-                    weight: 2
-                }).addTo(positionLayer);
-
                 popupContent += `<b>Nærmeste Shelter:</b> ${Math.round(closestShelter.distance)} meter<br>`;
             } else {
                 popupContent += `<b>Ingen Shelters funnet</b><br>`;
             }
 
             if (closestBunker.marker) {
-                // Draw line to closest bunker
-                const bunkerLine = L.polyline([e.latlng, closestBunker.marker.getLatLng()], {
-                    color: 'red',
-                    dashArray: '5, 10',
-                    weight: 2
-                }).addTo(positionLayer);
-
                 // Get the bunker details from the popup content
                 let bunkerDetails = '';
                 if (closestBunker.marker._popup) {
@@ -224,36 +276,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 draggable: true // Make the marker draggable
             }).addTo(customLayer);
 
-            // Find closest shelter (blue marker)
-            const closestShelter = findClosestMarker(latlng, shelterLayer);
+            // Find closest shelter with route
+            const closestShelter = findClosestMarkerWithRoute(latlng, shelterLayer, routeLayer, 'blue');
 
-            // Find closest bunker (red marker)
-            const closestBunker = findClosestMarker(latlng, bunkerLayer);
+            // Find closest bunker with route
+            const closestBunker = findClosestMarkerWithRoute(latlng, bunkerLayer, routeLayer, 'red');
 
             // Create information popup
             let popupContent = `<b>Din valgte posisjon</b><br><br>`;
 
             if (closestShelter.marker) {
-                // Draw line to closest shelter
-                const shelterLine = L.polyline([latlng, closestShelter.marker.getLatLng()], {
-                    color: 'blue',
-                    dashArray: '5, 10',
-                    weight: 2
-                }).addTo(customLayer);
-
                 popupContent += `<b>Nærmeste Shelter:</b> ${Math.round(closestShelter.distance)} meter<br>`;
             } else {
                 popupContent += `<b>Ingen Shelters funnet</b><br>`;
             }
 
             if (closestBunker.marker) {
-                // Draw line to closest bunker
-                const bunkerLine = L.polyline([latlng, closestBunker.marker.getLatLng()], {
-                    color: 'red',
-                    dashArray: '5, 10',
-                    weight: 2
-                }).addTo(customLayer);
-
                 // Get the bunker details from the popup content
                 let bunkerDetails = '';
                 if (closestBunker.marker._popup) {
@@ -272,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             customMarker.bindPopup(popupContent).openPopup();
 
-            // Update distances when marker is dragged
+            // Update distances and routes when marker is dragged
             customMarker.on('dragend', function (event) {
                 const newPosition = event.target.getLatLng();
                 createCustomMarker(newPosition);
@@ -308,10 +346,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         locateControl.addTo(map);
 
-        // Create custom control for layer selection
-        const layerControl = L.control({ position: 'topright' });
+        // Create custom control for layer selection - FIXED VERSION that includes the route layer option
+        const layerControlPanel = L.control({ position: 'topright' });
 
-        layerControl.onAdd = function (map) {
+        layerControlPanel.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'layer-control');
             div.innerHTML = `
           <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.4);">
@@ -340,6 +378,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 Valgt posisjon (Lilla)
               </label>
             </div>
+            <div>
+              <label>
+                <input type="checkbox" id="route-checkbox" checked>
+                Ruter (Blå/Rød)
+              </label>
+            </div>
           </div>
         `;
 
@@ -349,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return div;
         };
 
-        layerControl.addTo(map);
+        layerControlPanel.addTo(map);
 
         // Add event listeners to checkboxes
         setTimeout(() => {
@@ -385,6 +429,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
+            // Add new event listener for route checkbox
+            document.getElementById('route-checkbox').addEventListener('change', function (e) {
+                if (e.target.checked) {
+                    map.addLayer(routeLayer);
+                    // If the info box exists, show it when routes are enabled
+                    if (infoBox) {
+                        document.querySelector('.info-box').style.display = 'block';
+                    }
+                } else {
+                    map.removeLayer(routeLayer);
+                    // Hide the info box when routes are disabled
+                    if (infoBox) {
+                        document.querySelector('.info-box').style.display = 'none';
+                    }
+                }
+            });
+
             // Add event listener for locate button
             document.getElementById('locate-button').addEventListener('click', function () {
                 map.locate({
@@ -399,6 +460,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (customMarker) {
                     customLayer.clearLayers();
                     customMarker = null;
+
+                    // Update the info box to show that no custom marker is selected
+                    createOrUpdateInfoBox({
+                        shelter: { marker: null, distance: Infinity },
+                        bunker: { marker: null, distance: Infinity },
+                        overall: null,
+                        type: ''
+                    }, null);
                 }
             });
         }, 200);
@@ -407,6 +476,14 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
             map.invalidateSize();
         }, 100);
+
+        // Initialize the info box with empty state
+        createOrUpdateInfoBox({
+            shelter: { marker: null, distance: Infinity },
+            bunker: { marker: null, distance: Infinity },
+            overall: null,
+            type: ''
+        }, null);
 
     } catch (error) {
         console.error('Map initialization error:', error);
