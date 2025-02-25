@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Function to find closest marker from a layer group
         function findClosestMarker(position, layerGroup) {
             let closestMarker = null;
-            let closestDistance = Infinity;
+            let closestDistance = 50000;
 
             layerGroup.eachLayer(function (layer) {
                 if (layer instanceof L.Marker) {
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Function to calculate route between two points using OSRM
         function calculateRoute(startPoint, endPoint) {
             // OSRM public demo server - for production, consider using your own OSRM instance
-            const osrmURL = `https://router.project-osrm.org/route/v1/driving/${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}?overview=full&geometries=geojson`;
+            const osrmURL = `https://router.project-osrm.org/route/v1/walking/${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}?overview=full&geometries=geojson`;
 
             return fetch(osrmURL)
                 .then(response => response.json())
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 style: {
                     color: color,
                     weight: 4,
-                    opacity: 0.7
+                    opacity: 0.6
                 }
             }).addTo(layerGroup);
 
@@ -338,16 +338,35 @@ document.addEventListener('DOMContentLoaded', function () {
             }).addTo(customLayer);
 
             // Find closest shelter with route
-            const closestShelter = findClosestMarkerWithRoute(latlng, shelterLayer, routeLayer, 'blue');
+            let closestShelter = findClosestMarkerWithRoute(latlng, shelterLayer, routeLayer, 'blue');
 
             // Find closest bunker with route
-            const closestBunker = findClosestMarkerWithRoute(latlng, bunkerLayer, routeLayer, 'red');
+            let closestBunker = findClosestMarkerWithRoute(latlng, bunkerLayer, routeLayer, 'red');
 
             // Create information popup
             let popupContent = `<b>Din valgte posisjon</b><br><br>`;
 
+            let distanceUnitBunker = 'm';
+            let distanceUnitShelter = 'm';
+
+            if (closestBunker.distance >= 1000) {
+                distanceBunker = (closestBunker.distance / 1000).toFixed(1);
+                distanceUnitBunker = 'km';
+            }
+            else {
+                distanceBunker = Math.round(closestBunker.distance);                
+            }
+
+            if (closestShelter.distance >= 1000) {
+                distanceShelter = (closestShelter.distance / 1000).toFixed(1);
+                distanceUnitShelter = 'km';
+            }
+            else {
+                distanceShelter = Math.round(closestShelter.distance);                
+            }
+
             if (closestShelter.marker) {
-                popupContent += `<b>Nærmeste Shelter:</b> ${Math.round(closestShelter.distance)} meter<br>`;
+                popupContent += `<b>Nærmeste Shelter:</b> ${distanceShelter} ${distanceUnitShelter}<br>`;
             } else {
                 popupContent += `<b>Ingen Shelters funnet</b><br>`;
             }
@@ -361,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     bunkerDetails = popupElement.textContent.trim().replace(/\n\s+/g, ', ');
                 }
 
-                popupContent += `<b>Nærmeste Tilfluktsrom:</b> ${Math.round(closestBunker.distance)} meter`;
+                popupContent += `<b>Nærmeste Tilfluktsrom:</b> ${distanceBunker} ${distanceUnitBunker}`;
                 if (bunkerDetails) {
                     popupContent += `<br><small>${bunkerDetails}</small>`;
                 }
