@@ -17,60 +17,121 @@ document.addEventListener('DOMContentLoaded', function () {
             maxZoom: 19
         }).addTo(map);
 
+        // Define custom icons with absolute paths and improved settings
+        const bombShelterIcon = L.icon({
+            iconUrl: window.location.origin + '/assets/bunker-svgrepo-com-3.svg',
+            iconSize: [30, 30],
+            iconAnchor: [20, 20], // Changed from [20, 40] to center the icon properly
+            popupAnchor: [0, -20] // Adjusted to match new anchor position
+        });
+
+        const shelterIcon = L.icon({
+            iconUrl: window.location.origin + '/assets/tent-7-svgrepo-com.svg',
+            iconSize: [30, 30],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
+        });
+
         // Create layer groups to hold our markers
         const shelterLayer = L.layerGroup().addTo(map);
         const bunkerLayer = L.layerGroup().addTo(map);
         const positionLayer = L.layerGroup().addTo(map); // Layer for position marker
         const customLayer = L.layerGroup().addTo(map); // Layer for custom markers
-        const routeLayer = L.layerGroup().addTo(map); // Layer for routes - moved up from later in the code
+        const routeLayer = L.layerGroup().addTo(map); // Layer for routes
 
-        // Add shelter points (blue markers - default)
-        if (window.shelterData && window.shelterData.length > 0) {
-            window.shelterData.forEach(point => {
-                if (point.geom && point.geom.coordinates) {
-                    const coordinates = point.geom.coordinates;
-                    L.marker([coordinates[1], coordinates[0]])
-                        .addTo(shelterLayer)
-                        .bindPopup('Shelter');
-                }
+        // Fallback icons in case SVGs fail to load
+        const fallbackShelterIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            shadowSize: [41, 41],
+            shadowAnchor: [12, 41]
+        });
+
+        const fallbackBunkerIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            shadowSize: [41, 41],
+            shadowAnchor: [12, 41]
+        });
+
+        // Function to preload SVG icons and check if they load properly
+        function preloadImages(urls, callback) {
+            let loadedCount = 0;
+            const results = {};
+
+            urls.forEach(url => {
+                const img = new Image();
+                img.onload = function() {
+                    results[url] = true;
+                    loadedCount++;
+                    if (loadedCount === urls.length) callback(results);
+                };
+                img.onerror = function() {
+                    results[url] = false;
+                    loadedCount++;
+                    if (loadedCount === urls.length) callback(results);
+                };
+                img.src = url;
             });
         }
 
-        // Add bunker points (red markers)
-        if (window.bunkerData && window.bunkerData.length > 0) {
-            window.bunkerData.forEach((point, index) => {
-                if (point.geom && point.geom.coordinates) {
-                    try {
-                        const utmEasting = point.geom.coordinates[0];
-                        const utmNorthing = point.geom.coordinates[1];
-                        // Konverterer fra UTM Sone 32N til WGS84
-                        const wgs84Coords = proj4('EPSG:25832', 'WGS84', [utmEasting, utmNorthing]);
-                        const lat = wgs84Coords[1];
-                        const lng = wgs84Coords[0];
+        // Check if SVGs can be loaded
+        const shelterIconUrl = window.location.origin + '/assets/tent-7-svgrepo-com.svg';
+        const bunkerIconUrl = window.location.origin + '/assets/bunker-svgrepo-com-3.svg';
 
-                        const marker = L.marker([lat, lng], {
-                            icon: L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                shadowSize: [41, 41],
-                                shadowAnchor: [12, 41]
-                            })
-                        }).addTo(bunkerLayer)
-                            .bindPopup(`
-                  <b>Offentlig tilfluktsrom</b><br>
-                  Addresse: ${point.adresse}<br>
-                  Kapasitet: ${point.plasser} people<br>
-                  Romnr: ${point.romnr}
-                `);
-                    } catch (error) {
-                        console.error(`Error converting coordinates for bunker ${index}:`, error);
+        preloadImages([shelterIconUrl, bunkerIconUrl], function(results) {
+            const useShelterSvg = results[shelterIconUrl];
+            const useBunkerSvg = results[bunkerIconUrl];
+
+            // Add shelter points (blue markers - default)
+            if (window.shelterData && window.shelterData.length > 0) {
+                window.shelterData.forEach(point => {
+                    if (point.geom && point.geom.coordinates) {
+                        const coordinates = point.geom.coordinates;
+                        // Use SVG if it loaded, otherwise fallback
+                        const icon = useShelterSvg ? shelterIcon : fallbackShelterIcon;
+                        L.marker([coordinates[1], coordinates[0]], { icon: icon })
+                            .addTo(shelterLayer)
+                            .bindPopup('Shelter');
                     }
-                }
-            });
-        }
+                });
+            }
+
+            // Add bunker points (red markers)
+            if (window.bunkerData && window.bunkerData.length > 0) {
+                window.bunkerData.forEach((point, index) => {
+                    if (point.geom && point.geom.coordinates) {
+                        try {
+                            const utmEasting = point.geom.coordinates[0];
+                            const utmNorthing = point.geom.coordinates[1];
+                            // Konverterer fra UTM Sone 32N til WGS84
+                            const wgs84Coords = proj4('EPSG:25832', 'WGS84', [utmEasting, utmNorthing]);
+                            const lat = wgs84Coords[1];
+                            const lng = wgs84Coords[0];
+
+                            // Use SVG if it loaded, otherwise fallback
+                            const icon = useBunkerSvg ? bombShelterIcon : fallbackBunkerIcon;
+                            L.marker([lat, lng], { icon: icon })
+                                .addTo(bunkerLayer)
+                                .bindPopup(`
+                                    <b>Offentlig tilfluktsrom</b><br>
+                                    Addresse: ${point.adresse}<br>
+                                    Kapasitet: ${point.plasser} people<br>
+                                    Romnr: ${point.romnr}
+                                `);
+                        } catch (error) {
+                            console.error(`Error converting coordinates for bunker ${index}:`, error);
+                        }
+                    }
+                });
+            }
+        });
 
         // Add current position marker (green)
         let positionMarker = null;
@@ -201,10 +262,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 icon: greenIcon
             }).addTo(positionLayer);
 
-            // Find closest shelter (blue marker)
+            // Find closest shelter with route
             const closestShelter = findClosestMarkerWithRoute(e.latlng, shelterLayer, routeLayer, 'blue');
 
-            // Find closest bunker (red marker)
+            // Find closest bunker with route
             const closestBunker = findClosestMarkerWithRoute(e.latlng, bunkerLayer, routeLayer, 'red');
 
             // Create information popup
@@ -328,19 +389,21 @@ document.addEventListener('DOMContentLoaded', function () {
         locateControl.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'locate-control');
             div.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button id="locate-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
-              <span style="font-size: 16px;">📍 Finn min posisjon</span>
-            </button>
-            <button id="clear-custom-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
-              <span style="font-size: 16px;">🗑️ Fjern lilla markør</span>
-            </button>
-          </div>
-        `;
-
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="locate-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+                  <img src="/assets/map-pin-svgrepo-com.svg" alt="Pin" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
+                  <span style="font-size: 16px; line-height: 20px;">Finn min posisjon</span>
+                </button>
+                <button id="clear-custom-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+                  <img src="/assets/trash-svgrepo-com.svg" alt="Trash" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
+                  <span style="font-size: 16px; line-height: 20px;">Fjern lilla markør</span>
+                </button>
+              </div>
+            `;
+        
             // Prevent map clicks from propagating through the control
             L.DomEvent.disableClickPropagation(div);
-
+        
             return div;
         };
 
@@ -462,12 +525,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     customMarker = null;
 
                     // Update the info box to show that no custom marker is selected
-                    createOrUpdateInfoBox({
-                        shelter: { marker: null, distance: Infinity },
-                        bunker: { marker: null, distance: Infinity },
-                        overall: null,
-                        type: ''
-                    }, null);
+                    if (typeof createOrUpdateInfoBox === "function") {
+                        createOrUpdateInfoBox({
+                            shelter: { marker: null, distance: Infinity },
+                            bunker: { marker: null, distance: Infinity },
+                            overall: null,
+                            type: ''
+                        }, null);
+                    }
                 }
             });
         }, 200);
@@ -477,13 +542,8 @@ document.addEventListener('DOMContentLoaded', function () {
             map.invalidateSize();
         }, 100);
 
-        // Initialize the info box with empty state
-        createOrUpdateInfoBox({
-            shelter: { marker: null, distance: Infinity },
-            bunker: { marker: null, distance: Infinity },
-            overall: null,
-            type: ''
-        }, null);
+        // Log success message
+        console.log('Map initialized successfully');
 
     } catch (error) {
         console.error('Map initialization error:', error);
