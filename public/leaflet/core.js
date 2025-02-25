@@ -428,61 +428,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         locateControl.addTo(map);
 
-        // Create custom control for layer selection - FIXED VERSION that includes the route layer option
-        const layerControlPanel = L.control({ position: 'topright' });
-
-        layerControlPanel.onAdd = function (map) {
-            const div = L.DomUtil.create('div', 'layer-control');
-            div.innerHTML = `
-          <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.4);">
-            <h4 style="margin: 0 0 5px 0;">Velg hvilke elementer du ønsker å se:</h4>
-            <div>
-              <label>
-                <input type="checkbox" id="shelter-checkbox" checked>
-                Alternativt tilfluktsrom
-                <img src="${window.location.origin}/assets/tent-7-svgrepo-com.svg" alt="Shelter" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;">
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" id="bunker-checkbox" checked>
-                Offentlig Tilfluktsrom
-                <img src="${window.location.origin}/assets/bunker-svgrepo-com-3.svg" alt="Tilfluktsrom" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;">
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" id="position-checkbox" checked>
-                Min posisjon
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" alt="Min posisjon" style="width: 12px; height: 20px; vertical-align: middle; margin-right: 4px;">
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" id="custom-checkbox" checked>
-                Valgt posisjon
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png" alt="Valgt posisjon" style="width: 12px; height: 20px; vertical-align: middle; margin-right: 4px;">
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" id="route-checkbox" checked>
-                Ruter (Blå/Rød)
-              </label>
-            </div>
-          </div>
-        `;
-
-            // Prevent map clicks from propagating through the control
-            L.DomEvent.disableClickPropagation(div);
-
-            return div;
-        };
-
-        layerControlPanel.addTo(map);
-
-        // Add event listeners to checkboxes
+        // Setup layer control checkboxes
         setTimeout(() => {
+            // Setup event listeners for checkboxes that are now in the button-container
             document.getElementById('shelter-checkbox').addEventListener('change', function (e) {
                 if (e.target.checked) {
                     map.addLayer(shelterLayer);
@@ -515,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Add new event listener for route checkbox
+            // Add event listener for route checkbox
             document.getElementById('route-checkbox').addEventListener('change', function (e) {
                 if (e.target.checked) {
                     map.addLayer(routeLayer);

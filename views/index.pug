@@ -1,28 +1,50 @@
 extends layout
-
 block content
-    div.content-container
-        div.title-container
-            h1 IS-218 Oppgave 2
-            p Gruppe 10
-        div.map-container
-            div#map
-        div.info-container
-            div.left
-                h3 Overskrift venstre
-                p Går an å skrive noe om oppgaven på denne siden
-            div.right
-                h3 Overskrift høyre
-                p Går an å skrive noe ANNET om oppgaven på denne siden
-
-    script.
-        window.shelterData = !{shelterData || 'null'};
-        window.bunkerData = !{bunkerData || 'null'};
-    
-    script(
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""
-    )
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js")
-    script(src='/leaflet/core.js')
+  div.content-container
+    div.title-container
+      h1 IS-218 Oppgave 2
+      p Gruppe 10
+    div.button-container
+      div.layer-controls
+        div.layer-control-item
+          input(type="checkbox", id="shelter-checkbox", checked)
+          label(for="shelter-checkbox") 
+            | Alternativt tilfluktsrom
+            img(src="/assets/tent-7-svgrepo-com.svg", alt="Shelter", style="width: 20px; height: 20px; vertical-align: middle; margin-left: 4px;")
+        div.layer-control-item
+          input(type="checkbox", id="bunker-checkbox", checked)
+          label(for="bunker-checkbox") 
+            | Offentlig Tilfluktsrom
+            img(src="/assets/bunker-svgrepo-com-3.svg", alt="Tilfluktsrom", style="width: 20px; height: 20px; vertical-align: middle; margin-left: 4px;")
+        div.layer-control-item
+          input(type="checkbox", id="position-checkbox", checked)
+          label(for="position-checkbox") 
+            | Min posisjon
+            img(src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png", alt="Min posisjon", style="width: 12px; height: 20px; vertical-align: middle; margin-left: 4px;")
+        div.layer-control-item
+          input(type="checkbox", id="custom-checkbox", checked)
+          label(for="custom-checkbox") 
+            | Valgt posisjon
+            img(src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png", alt="Valgt posisjon", style="width: 12px; height: 20px; vertical-align: middle; margin-left: 4px;")
+        div.layer-control-item
+          input(type="checkbox", id="route-checkbox", checked)
+          label(for="route-checkbox") Ruter (Blå/Rød)
+    div.map-container
+      div#map
+    div.info-container
+      div.left
+        h3 Overskrift venstre
+        p Går an å skrive noe om oppgaven på denne siden
+      div.right
+        h3 Overskrift høyre
+        p Går an å skrive noe ANNET om oppgaven på denne siden
+  script.
+    window.shelterData = !{shelterData || 'null'};
+    window.bunkerData = !{bunkerData || 'null'};
+  script(
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  )
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js")
+  script(src='/leaflet/core.js')
