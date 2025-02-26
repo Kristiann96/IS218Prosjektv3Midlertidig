@@ -91,3 +91,23 @@
     flex: 1;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   }
+
+  .layer-control-item {
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+  }
+  
+  #locate-button, 
+  #clear-custom-button {
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .layer-control-item:hover {
+    background-color: #bbcad5;
+  }
+  
+  #locate-button:hover, 
+  #clear-custom-button:hover {
+    background-color: #bbcad5;
+  }
