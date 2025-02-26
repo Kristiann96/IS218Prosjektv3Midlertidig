@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const icon = useShelterSvg ? shelterIcon : fallbackShelterIcon;
                         L.marker([coordinates[1], coordinates[0]], { icon: icon })
                             .addTo(shelterLayer)
-                            .bindPopup('Shelter');
+                            .bindPopup('Alternativt Tilfluktsrom');
                     }
                 });
             }
@@ -272,9 +272,9 @@ document.addEventListener('DOMContentLoaded', function () {
             let popupContent = `<b>Din posisjon</b><br>Nøyaktighet: ${radius.toFixed(1)} meter<br><br>`;
 
             if (closestShelter.marker) {
-                popupContent += `<b>Nærmeste Shelter:</b> ${Math.round(closestShelter.distance)} meter<br>`;
+                popupContent += `<b>Nærmeste Alternative Tilfluktsrom:</b> ${Math.round(closestShelter.distance)} meter<br>`;
             } else {
-                popupContent += `<b>Ingen Shelters funnet</b><br>`;
+                popupContent += `<b>Ingen Alternative Tilfluktsrom funnet</b><br>`;
             }
 
             if (closestBunker.marker) {
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (closestShelter.marker) {
-                popupContent += `<b>Nærmeste Shelter:</b> ${distanceShelter} ${distanceUnitShelter}<br>`;
+                popupContent += `<b>Nærmeste Alternative Tilfluktsrom:</b> ${distanceShelter} ${distanceUnitShelter}<br>`;
             } else {
                 popupContent += `<b>Ingen Shelters funnet</b><br>`;
             }
