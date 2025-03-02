@@ -60,24 +60,52 @@ async function getBunkerData(limit = 65) {
 }
 
 /**
+ * Fetches population data from the database
+ * @param {number} limit - Maximum number of records to return
+ * @returns {Promise<Object>} - Object containing data and any error
+ */
+async function getPopulationData(limit = 100) {
+    try {
+        const { data, error } = await supabase
+            .from('befolkning_grunnkrets_agder') // This should be your population table name
+            .select('*')
+            .limit(limit);
+
+        if (error) {
+            console.error('Error fetching population data:', error);
+            throw error;
+        }
+
+        console.log('Population Data Count:', data?.length);
+        return { data, error: null };
+    } catch (error) {
+        console.error('Population data service error:', error);
+        return { data: null, error };
+    }
+}
+
+/**
  * Fetches both shelter and bunker data in one call
  * @returns {Promise<Object>} - Object containing both datasets and any errors
  */
 async function getAllData() {
     const [shelterResult, bunkerResult] = await Promise.all([
         getShelterData(),
-        getBunkerData()
+        getBunkerData(),
+        getPopulationData()
     ]);
 
     return {
         shelterData: shelterResult.data,
         bunkerData: bunkerResult.data,
-        error: shelterResult.error || bunkerResult.error
+        populationData: populationResult.data,
+        error: shelterResult.error || bunkerResult.error || populationResult.error
     };
 }
 
 module.exports = {
     getShelterData,
     getBunkerData,
+    getPopulationData,
     getAllData
 };

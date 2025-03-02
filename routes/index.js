@@ -5,7 +5,7 @@ const dataService = require('../services/supabaseService');
 router.get('/', async function (req, res, next) {
     try {
         // Get all data using the data service
-        const { shelterData, bunkerData, error } = await dataService.getAllData();
+        const { shelterData, bunkerData, populationData, error } = await dataService.getAllData();
 
         if (error) {
             throw error;
@@ -14,14 +14,16 @@ router.get('/', async function (req, res, next) {
         res.render('index', {
             title: 'Express',
             shelterData: JSON.stringify(shelterData),
-            bunkerData: JSON.stringify(bunkerData)
+            bunkerData: JSON.stringify(bunkerData),
+            populationData: JSON.stringify(populationData)
         });
     } catch (error) {
         console.error('Route error:', error);
         res.render('index', {
             title: 'Express',
             shelterData: 'null',
-            bunkerData: 'null'
+            bunkerData: 'null',
+            populationData: 'null'
         });
     }
 });

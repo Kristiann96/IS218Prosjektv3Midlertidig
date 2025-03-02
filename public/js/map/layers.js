@@ -12,13 +12,15 @@ function createLayers(map) {
     const positionLayer = L.layerGroup().addTo(map);
     const customLayer = L.layerGroup().addTo(map);
     const routeLayer = L.layerGroup().addTo(map);
+    const populationLayer = L.layerGroup().addTo(map);
 
     return {
         shelterLayer,
         bunkerLayer,
         positionLayer,
         customLayer,
-        routeLayer
+        routeLayer,
+        populationLayer
     };
 }
 
@@ -87,9 +89,65 @@ function findClosestMarker(position, layerGroup) {
     };
 }
 
+// Add population data as a choropleth layer
+function addPopulationLayer(populationData, map) {
+    if (!populationData || !populationData.length) return null;
+
+    // Create an object to hold GeoJSON data
+    const geoJsonData = {
+        type: 'FeatureCollection',
+        features: []
+    };
+
+    // Convert population data to GeoJSON features
+    populationData.forEach(region => {
+        if (region.geom) {
+            geoJsonData.features.push({
+                type: 'Feature',
+                geometry: region.geom,
+                properties: {
+                    name: region.grunnkretsnavn || 'Unknown',
+                    population: region.antall_personer || 0
+                }
+            });
+        }
+    });
+
+    // Create the choropleth layer with population styling
+    const populationLayer = L.geoJSON(geoJsonData, {
+        style: function (feature) {
+            // Get color based on population count
+            return {
+                fillColor: getColorByPopulation(feature.properties.population),
+                weight: 1,
+                opacity: 1,
+                color: 'white',
+                fillOpacity: 0.7
+            };
+        },
+        onEachFeature: function (feature, layer) {
+            // Add popup with info
+            layer.bindPopup(
+                `<b>${feature.properties.name}</b><br>` +
+                `Population: ${feature.properties.population}`
+            );
+        }
+    });
+
+    return populationLayer;
+}
+
+// Helper function to get color based on population count
+function getColorByPopulation(population) {
+    return population > 5000 ? '#800026' :
+        population > 1000 ? '#E31A1C' :
+            '#FEB24C';
+}
+
 export {
     createLayers,
     addShelters,
     addBunkers,
-    findClosestMarker
+    findClosestMarker,
+    addPopulationLayer
 };
