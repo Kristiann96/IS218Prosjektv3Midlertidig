@@ -1,32 +1,16 @@
-/**
- * Simple polygon draw module
- * Implements Leaflet Draw functionality for creating polygons only
- */
-
 // Initialize polygon drawing tool on the map
 function initializePolygonDrawing(map, polygonLayer) {
     // Create draw control with polygon option only
     const drawControl = new L.Control.Draw({
-        position: 'topright',
+        position: 'topleft',
         draw: {
             // Disable all other drawing tools
             polyline: false,
             rectangle: false,
-            circle: false,
+            circle: true,
             circlemarker: false,
             marker: false,
-            // Configure polygon tool
-            polygon: {
-                allowIntersection: false,
-                drawError: {
-                    color: '#e1e100',
-                    message: '<strong>Error:</strong> Shape edges cannot cross!'
-                },
-                shapeOptions: {
-                    color: '#3388ff',
-                    weight: 3,
-                    fillOpacity: 0.2
-                }
+            polygon: false
             }
         },
         edit: {
