@@ -17,6 +17,9 @@ block content
             | Offentlig Tilfluktsrom
             img(src="/assets/bunker-svgrepo-com-3.svg", alt="Tilfluktsrom", style="width: 20px; height: 20px; vertical-align: middle; margin-left: 4px;")
         div.layer-control-item
+          input(type="checkbox", id="population-checkbox")
+          label(for="population-checkbox") Befolkning
+        div.layer-control-item
           input(type="checkbox", id="position-checkbox", checked)
           label(for="position-checkbox") 
             | Min posisjon
@@ -33,19 +36,49 @@ block content
       div#map
     div.info-container
       div.left
-        h3 Overskrift venstre
-        p Går an åå skrive noe om oppgaven på denne siden
+        h3 Befolkningsdata
+        p Dette kartet viser befolkningsdata for regioner i Agder, sammen med tilfluktsrom og alternative tilfluktsrom.
       div.right
-        h3 Overskrift høyre
-        p Går an å skrive noe ANNET om oppgaven på denne siden
+        h3 Fargeforklaring
+        div.legend
+          div.legend-item
+            span.color-box(style="background-color: #800026;") 
+            span Høy befolkning (>5000)
+          div.legend-item
+            span.color-box(style="background-color: #E31A1C;") 
+            span Medium befolkning (1000-5000)
+          div.legend-item
+            span.color-box(style="background-color: #FEB24C;") 
+            span Lav befolkning (<1000)
   script.
-    window.shelterData = !{shelterData || 'null'};
-    window.bunkerData = !{bunkerData || 'null'};
+    // Helper function to handle Norwegian characters
+    function fixNorwegianChars(data) {
+      if (!data) return null;
+      
+      // If data is already parsed, stringify it first
+      const jsonStr = typeof data === 'string' ? data : JSON.stringify(data);
+      
+      // Use the browser's decoding capabilities if available
+      try {
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        console.error('Error parsing JSON:', e);
+        return null;
+      }
+    }
+    
+    window.shelterData = fixNorwegianChars(!{shelterData || 'null'});
+    window.bunkerData = fixNorwegianChars(!{bunkerData || 'null'});
+    window.populationData = fixNorwegianChars(!{populationData || 'null'});
   script(
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   )
   script(src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js")
+<<<<<<< Updated upstream
   script(type="module", src='/js/main.js')
   script(src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js")
+=======
+  script(src='/js/main.js' type='module')
+>>>>>>> Stashed changes
