@@ -8,6 +8,7 @@ import { getIcons } from './map/icons.js';
 import { createLayers, addShelters, addBunkers } from './map/layers.js';
 import { setupLocationTracking, setupCustomMarker } from './map/position.js';
 import { createLocateControl, setupLayerControls } from './map/controls.js';
+import { initializeDrawing } from './map/drawing.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     try {
@@ -48,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             layers.routeLayer,
             icons
         );
+
+        // Initialize drawing tools and analysis
+        const drawingTools = initializeDrawing(map);
 
         // Create UI controls
         createLocateControl(map, locationTracker, customMarkerHandler);

@@ -11,21 +11,26 @@ const supabase = createClient(
 
 router.get('/', async function (req, res, next) {
     try {
-        // Fetch from first table
+        // Fetch from shelter table
         const { data: shelterData, error: shelterError } = await supabase
             .from('osm_shelter_type_basic_hut_agder')
             .select('*')
             .limit(100);
 
-        // Fetch from second table
+        // Fetch from bunker table
         const { data: bunkerData, error: bunkerError } = await supabase
             .from('tilfluktsrom_offentlige')
             .select('*')
             .limit(65);
+            
+        // Fetch from population table
+        const { data: populationData, error: populationError } = await supabase
+            .from('befolkning_agder')
+            .select('*');
 
         console.log('Shelter Data Count:', shelterData?.length);
         console.log('Bunker Data Count:', bunkerData?.length);
-        console.log('Sample Bunker Data:', bunkerData?.[0]); // Look at structure
+        console.log('Population Data Count:', populationData?.length);
 
         if (shelterError) {
             console.error('Shelter Error:', shelterError);
@@ -35,11 +40,16 @@ router.get('/', async function (req, res, next) {
             console.error('Bunker Error:', bunkerError);
             throw bunkerError;
         }
+        if (populationError) {
+            console.error('Population Error:', populationError);
+            throw populationError;
+        }
 
         res.render('index', {
             title: 'Express',
             shelterData: JSON.stringify(shelterData),
-            bunkerData: JSON.stringify(bunkerData)
+            bunkerData: JSON.stringify(bunkerData),
+            populationData: JSON.stringify(populationData)
         });
     } catch (error) {
         console.error('Error:', error);
