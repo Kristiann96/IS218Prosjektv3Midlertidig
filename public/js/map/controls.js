@@ -1,9 +1,9 @@
 /**
  * Controls module
- * Handles map controls and event listeners
+ * Handles map controls such as layers, locate button, etc.
  */
 
-// Create locate control
+// Create locate control button
 function createLocateControl(map, locationTracker, customMarkerHandler) {
     const locateControl = L.control({ position: 'bottomright' });
 
@@ -17,82 +17,79 @@ function createLocateControl(map, locationTracker, customMarkerHandler) {
             </button>
             <button id="clear-custom-button" style="padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
               <img src="/assets/trash-svgrepo-com.svg" alt="Trash" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
-              <span style="font-size: 16px; line-height: 20px;">Fjern lilla markør</span>
+              <span style="font-size: 16px; line-height: 20px;">Fjern lilla markÃ¸r</span>
             </button>
           </div>
         `;
-
+    
         // Prevent map clicks from propagating through the control
         L.DomEvent.disableClickPropagation(div);
-
+    
         return div;
     };
 
     locateControl.addTo(map);
 
-    // Add event listeners after DOM is fully loaded
+    // Add event listener for locate button
     setTimeout(() => {
-        // Locate button event listener
-        document.getElementById('locate-button')?.addEventListener('click', function () {
-            locationTracker.locateUser();
+        document.getElementById('locate-button').addEventListener('click', function () {
+            map.locate({
+                setView: true,
+                maxZoom: 16,
+                enableHighAccuracy: true
+            });
         });
 
-        // Clear custom marker button event listener
-        document.getElementById('clear-custom-button')?.addEventListener('click', function () {
-            customMarkerHandler.clearCustomMarker();
+        // Add event listener for clear custom marker button
+        document.getElementById('clear-custom-button').addEventListener('click', function () {
+            if (customMarkerHandler && typeof customMarkerHandler.clearMarker === 'function') {
+                customMarkerHandler.clearMarker();
+            }
         });
-    }, 200);
-
-    return locateControl;
+    }, 100);
 }
 
-// Set up layer control checkboxes
+// Setup layer control checkboxes
 function setupLayerControls(map, layers) {
-    const { shelterLayer, bunkerLayer, positionLayer, customLayer, routeLayer } = layers;
-
     setTimeout(() => {
-        // Setup shelter layer control
-        document.getElementById('shelter-checkbox')?.addEventListener('change', function (e) {
+        // Setup event listeners for checkboxes
+        document.getElementById('shelter-checkbox').addEventListener('change', function (e) {
             if (e.target.checked) {
-                map.addLayer(shelterLayer);
+                map.addLayer(layers.shelterLayer);
             } else {
-                map.removeLayer(shelterLayer);
+                map.removeLayer(layers.shelterLayer);
             }
         });
 
-        // Setup bunker layer control
-        document.getElementById('bunker-checkbox')?.addEventListener('change', function (e) {
+        document.getElementById('bunker-checkbox').addEventListener('change', function (e) {
             if (e.target.checked) {
-                map.addLayer(bunkerLayer);
+                map.addLayer(layers.bunkerLayer);
             } else {
-                map.removeLayer(bunkerLayer);
+                map.removeLayer(layers.bunkerLayer);
             }
         });
 
-        // Setup position layer control
-        document.getElementById('position-checkbox')?.addEventListener('change', function (e) {
+        document.getElementById('position-checkbox').addEventListener('change', function (e) {
             if (e.target.checked) {
-                map.addLayer(positionLayer);
+                map.addLayer(layers.positionLayer);
             } else {
-                map.removeLayer(positionLayer);
+                map.removeLayer(layers.positionLayer);
             }
         });
 
-        // Setup custom marker layer control
-        document.getElementById('custom-checkbox')?.addEventListener('change', function (e) {
+        document.getElementById('custom-checkbox').addEventListener('change', function (e) {
             if (e.target.checked) {
-                map.addLayer(customLayer);
+                map.addLayer(layers.customLayer);
             } else {
-                map.removeLayer(customLayer);
+                map.removeLayer(layers.customLayer);
             }
         });
 
-        // Setup route layer control
-        document.getElementById('route-checkbox')?.addEventListener('change', function (e) {
+        document.getElementById('route-checkbox').addEventListener('change', function (e) {
             if (e.target.checked) {
-                map.addLayer(routeLayer);
+                map.addLayer(layers.routeLayer);
             } else {
-                map.removeLayer(routeLayer);
+                map.removeLayer(layers.routeLayer);
             }
         });
     }, 200);
