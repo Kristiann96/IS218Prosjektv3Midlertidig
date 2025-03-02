@@ -8,6 +8,7 @@ import { getIcons } from './map/icons.js';
 import { createLayers, addShelters, addBunkers } from './map/layers.js';
 import { setupLocationTracking, setupCustomMarker } from './map/position.js';
 import { createLocateControl, setupLayerControls } from './map/controls.js';
+import { initializePolygonDrawing, clearPolygons } from './map/draw.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     try {
@@ -21,6 +22,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Create layer groups
         const layers = createLayers(map);
+
+        // Create a layer group for drawing polygons
+        const polygonLayer = new L.FeatureGroup().addTo(map);
+        layers.polygonLayer = polygonLayer;
 
         // Load icons
         const icons = await getIcons();
@@ -54,6 +59,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Setup layer control checkboxes
         setupLayerControls(map, layers);
+
+        // Initialize polygon drawing tools
+        initializePolygonDrawing(map, polygonLayer);
 
         // Ensure map renders correctly
         setTimeout(() => {
